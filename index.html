@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -5,6 +6,21 @@
 <link rel="stylesheet" href="styles.css">
 <title>Breaker</title>
 
-<canvas></canvas>
-<canvas></canvas>
-<script src="main.js" type="module"></script>
+<span id="support-notes">
+    You have to enable JavaScript to play this game!
+</span>
+<script>
+    const supportNotes = document.getElementById('support-notes');
+    supportNotes.innerHTML = '';
+    if(typeof document.onpointermove === 'undefined'){
+        supportNotes.innerHTML = 'You have to have use a <a href="https://github.com/trustedtomato/breakout#browser-compatibility">supported browser</a> to make this game work!'
+    }else{
+        window.supported = true;
+    }
+</script>
+
+<script type="module">
+    if(window.supported){
+        import('./main.js');
+    }
+</script>

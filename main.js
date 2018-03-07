@@ -1,4 +1,7 @@
-const canvases = [...document.querySelectorAll('canvas')];
+const canvases = [document.createElement('canvas'), document.createElement('canvas')];
+for(const canvas of canvases){
+	document.body.appendChild(canvas);
+}
 const [bck, ctx] = canvases.map(canvas => canvas.getContext('2d'));
 import {parseRawLevel, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, isSameSign, range} from './util.js';
 const {floor, ceil, PI, random, min, max, abs} = Math;
@@ -168,7 +171,6 @@ const start = matrix => {
 	const listeners = [];
 	listeners.push(listen(window, 'resize', resize));
 	listeners.push(listen(document, 'pointermove', e => {
-		console.log(e.x, e.y);
 		paddle.x = between((e.x - canvasOffsetLeft) / blockSize - paddle.width / 2, 0, matrix.width - paddle.width);
 	}));
 	resize();

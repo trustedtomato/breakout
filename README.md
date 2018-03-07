@@ -12,9 +12,7 @@ But what I didn't find in neither of them is proper & efficient collision detect
 So thats what I did.
 
 ## Browser compatibility
-- Chrome 61
-- Firefox 59
-- Opera 51
+- Chrome 63
 
 *If you find a browser which works too, please send a pull request!*
 
