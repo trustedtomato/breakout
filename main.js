@@ -10,7 +10,7 @@ const start = matrix => {
 	if(window.debug) console.log('The default level matrix:', matrix.toString());
 	/*--- initalize game variables ---*/
 	const paddleConfig = {width: 2, height: 0.2};
-	const ballConfig = {radius: 0.1, defaultSpeed: 0.1};
+	const ballConfig = {radius: 0.1, defaultSpeed: 0.2};
 	const paddle = {
 		x: (matrix.width - paddleConfig.width) / 2,
 		y: matrix.height - paddleConfig.height,
@@ -89,8 +89,7 @@ const start = matrix => {
 				actions.push({
 					deltaS: deltaS,
 					action: () => {
-
-						ball.speed.y *= -1;
+						ball.speed = Vector.fromDir((paddle.x - nextPosition.x - ball.radius) / (paddle.width + ball.radius * 2) * PI - PI/2, ball.speed.length);
 					}
 				});
 			}
