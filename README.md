@@ -11,6 +11,12 @@ There are a lot of breakout games already:
 But what I didn't find in neither of them is proper & efficient collision detection.
 So thats what I did.
 
+## Browser compatibility
+- Chrome 61
+- Firefox 59
+- Opera 51
+*If you find a browser which works too, please send a pull request!*
+
 ## Contribution
 The code is pretty simple and readable.
 If you find a bug, I would love to see a fix pull request.
