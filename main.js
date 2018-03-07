@@ -2,6 +2,7 @@ const canvases = [...document.querySelectorAll('canvas')];
 const [bck, ctx] = canvases.map(canvas => canvas.getContext('2d'));
 import {parseRawLevel, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, isSameSign, range} from './util.js';
 const {floor, ceil, PI, random, min, max, abs} = Math;
+document.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
 window.debug = false;
 
 
@@ -166,7 +167,8 @@ const start = matrix => {
 	/*--- setup user interaction ---*/
 	const listeners = [];
 	listeners.push(listen(window, 'resize', resize));
-	listeners.push(listen(document, 'mousemove', e => {
+	listeners.push(listen(document, 'pointermove', e => {
+		console.log(e.x, e.y);
 		paddle.x = between((e.x - canvasOffsetLeft) / blockSize - paddle.width / 2, 0, matrix.width - paddle.width);
 	}));
 	resize();
