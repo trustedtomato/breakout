@@ -15,6 +15,7 @@ So thats what I did.
 - Chrome 61
 - Firefox 59
 - Opera 51
+
 *If you find a browser which works too, please send a pull request!*
 
 ## Contribution
