@@ -1,17 +1,36 @@
-const canvases = [document.createElement('canvas'), document.createElement('canvas')];
-for(const canvas of canvases){
-	document.body.appendChild(canvas);
-}
-const [bck, ctx] = canvases.map(canvas => canvas.getContext('2d'));
-import {parseRawLevel, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, isSameSign, range} from './util.js';
+import {parseLevelBuffer, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, isSameSign, range, getById, selectAll} from './util.js';
 const {floor, ceil, PI, random, min, max, abs} = Math;
-document.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
+listen(document, 'touchstart', e => e.preventDefault(), {passive: false});
 window.debug = false;
+const computedStyle = getComputedStyle(document.documentElement);
+const getCSSVariable = (variable) => computedStyle.getPropertyValue('--' + variable);
+const setCSSVariable = (variable, value) => computedStyle.setProperty('--' + variable, value);
+
+const cssColorToRgb = color => {
+	const d = document.createElement('div');
+	d.style.backgroundColor = color;
+	console.log(d.style.backgroundColor);
+	const c = d.style.backgroundColor.match(/([\d.]*)\s*,\s*([\d.]*)\s*,\s*([\d.]*)/);
+	return c.slice(1).map(Number);
+};
+console.log(cssColorToRgb(computedStyle.getPropertyValue('--background-color')));
 
 
-/*--- the game ---*/
-const start = matrix => {
+/*--- scenes ---*/
+const startMenu = getById('start-menu');
+const levelChoosing = getById('level-choosing');
+const game = getById('game');
+const creation = getById('creation');
+const scenes = new Map();
+
+
+scenes.set(game, ({scene, data:{level: matrix}}) => {
 	if(window.debug) console.log('The default level matrix:', matrix.toString());
+	const canvases = [...scene.querySelectorAll('canvas')];
+	const color = cssColorToRgb(getCSSVariable('background-color'));
+	const shadedColor = 'rgb(' + color.map(c => c-50).join(',') + ')';
+	const [bck, ctx] = canvases.map(canvas => canvas.getContext('2d'));
+
 	/*--- initalize game variables ---*/
 	const paddleConfig = {width: 2, height: 0.2};
 	const ballConfig = {radius: 0.1, defaultSpeed: 0.2};
@@ -31,15 +50,19 @@ const start = matrix => {
 	let canvasHeight = 0;
 	let canvasOffsetLeft = 0;
 	let canvasOffsetTop = 0;
+
+	/** Draws all the blocks. */
 	const drawBlocks = () => {
 		matrix.forEach((offset,x,y) => {
 			const blockType = matrix.view.getUint8(offset);
 			if(blockType === 1){
-				bck.fillStyle = 'red';
+				bck.fillStyle = shadedColor;
 				bck.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
 			}
 		});
 	};
+
+	/** Should be fired every time the window size changes. */
 	const resize = () => {
 		blockSize = min(
 			floor(window.innerWidth / matrix.width),
@@ -56,6 +79,15 @@ const start = matrix => {
 		drawBlocks();
 	};
 
+	/** Should be fired when you want to remove a block. */
+	const removeBlock = (x,y,offset) => {
+		if(typeof offset === 'undefined') offset = matrix.getOffset(x,y);
+		matrix.view.setUint8(offset, 0);
+		bck.clearRect(x * blockSize, y * blockSize, blockSize, blockSize);
+		return matrix.all(offset => matrix.view.getUint8(offset) % 2 === 0);
+	};
+
+	/** Get the ball-world interactions. */
 	const getBallInteractions = ball => {
 		const actions = [];
 		const nextPosition = ball.position.add(ball.speed);
@@ -137,9 +169,8 @@ const start = matrix => {
 						actions.push({
 							deltaS: xDeltaS,
 							action: () => {
-								matrix.view.setUint8(offset, 0);
-								bck.clearRect(x * blockSize, y * blockSize, blockSize, blockSize);
 								ball.speed.x *= -1;
+								return removeBlock(x, y, offset);
 							}
 						})
 					}
@@ -151,9 +182,8 @@ const start = matrix => {
 						actions.push({
 							deltaS: yDeltaS,
 							action: () => {
-								matrix.view.setUint8(offset, 0);
-								bck.clearRect(x * blockSize, y * blockSize, blockSize, blockSize);
 								ball.speed.y *= -1;
+								return removeBlock(x, y, offset);
 							}
 						});
 					}
@@ -169,8 +199,8 @@ const start = matrix => {
 	
 	/*--- setup user interaction ---*/
 	const listeners = [];
-	listeners.push(listen(window, 'resize', resize));
-	listeners.push(listen(document, 'pointermove', e => {
+	listeners.push(...listen(window, 'resize', resize));
+	listeners.push(...listen(document, 'pointermove', e => {
 		paddle.x = between((e.x - canvasOffsetLeft) / blockSize - paddle.width / 2, 0, matrix.width - paddle.width);
 	}));
 	resize();
@@ -202,7 +232,9 @@ const start = matrix => {
 
 			if(shortestBallInteraction){
 				ball.position = ball.position.add(shortestBallInteraction.deltaS);
-				shortestBallInteraction.action();
+				if(shortestBallInteraction.action()){
+					return;
+				}
 			}else{
 				ball.position = ball.position.add(ball.speed);
 			}
@@ -212,16 +244,65 @@ const start = matrix => {
 			ctx.closePath();
 		}
 		return reqAnimFrame(document, 'keydown').then(loop);
-	})().then(sendThrough(result => {
+	})().then(result => {
 		for(const listener of listeners){
 			listener.destroy();
 		}
-	}));
+		return{
+			scene: levelChoosing,
+			data: result
+		};
+	});
+});
+
+
+/*--- add levels ---*/
+range(1,2)
+	.forEach(n => {
+		const path = './levels/level' + n;
+		const btn = document.createElement('button');
+		btn.appendChild(document.createTextNode(n));
+		btn.setAttribute('data-path', path);
+		levelChoosing.appendChild(btn);
+	});
+
+scenes.set(levelChoosing, ({scene}) =>
+	waitForEvent(selectAll('button', scene), ['click', 'touchend'])
+	.then(e => e.target.getAttribute('data-path'))
+	.then(fetch)
+	.then(resp => resp.arrayBuffer())
+	.then(parseLevelBuffer)	
+	.then(level => ({
+		scene: game,
+		data: {level}
+	}))
+);
+
+scenes.set(startMenu, ({scene}) => 
+	waitForEvent(selectAll('button', scene), ['click', 'touchend'])
+	.then(e => e.target.getAttribute('data-scene-id'))
+	.then(sceneId => ({
+		scene: getById(sceneId)
+	}))
+);
+
+scenes.set(creation, scene => Promise.resolve({
+	scene: startMenu
+}));
+
+
+/*--- scene handling ---*/
+for(const [scene, func] of scenes){
+	scene.style.display = 'none';
+}
+const playScene = async ({scene, ...other}) => {
+	if(typeof scene.style === 'undefined'){
+		console.log(scene, "style property is not defined! other args:", args);
+	}
+	scene.style.display = '';
+	const {scene: nextScene, data} = await scenes.get(scene)({scene, ...other});
+	scene.style.display = 'none';
+	return playScene({scene: nextScene, previousScene: scene, data});
 };
 
-
-/*--- the flow ---*/
-fetch('./levels/test-level.txt')
-	.then(resp => resp.text())
-	.then(parseRawLevel)
-	.then(start);
+playScene({scene: startMenu});

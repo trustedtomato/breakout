@@ -6,21 +6,16 @@
 <link rel="stylesheet" href="styles.css">
 <title>Breaker</title>
 
-<span id="support-notes">
-    You have to enable JavaScript to play this game!
-</span>
-<script>
-    const supportNotes = document.getElementById('support-notes');
-    supportNotes.innerHTML = '';
-    if(typeof document.onpointermove === 'undefined'){
-        supportNotes.innerHTML = 'You have to have use a <a href="https://github.com/trustedtomato/breakout#browser-compatibility">supported browser</a> to make this game work!'
-    }else{
-        window.supported = true;
-    }
-</script>
 
-<script type="module">
-    if(window.supported){
-        import('./main.js');
-    }
-</script>
+<div id="game">
+    <canvas></canvas>
+    <canvas></canvas>
+</div>
+<div id="level-choosing"></div>
+<div id="creation"></div>
+<div id="start-menu">
+	<button data-scene-id="level-choosing">Campaign</button>
+	<button data-scene-id="creation">Create</button>
+	<span role="button" id="dark-theme">Dark theme</span>
+</div>
+<script type="module" src="main.js"></script>

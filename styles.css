@@ -1,20 +1,71 @@
+:root{
+	--background-color: #fe9;
+}
+
 html, body{
-    background-color: black;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background-color: var(--background-color);
 }
 body{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    color: white;
-    display: flex;
+	font-family: Courier New;
+	color: black;
+	font-size: 14px;
+}
+body > *{
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+button{
+	font-family: inherit;
+	margin: 8px;
+	padding: 8px;
+	border: 2px solid black;
+	background-color: white;
+	color: black;
+	box-shadow: 4px 4px black;
+	font-weight: bolder;
+	font-size: inherit;
+}
+button:active{
+	background-color: #ccc;
+}
+#game{
+	background-color: black;
+	display: flex;
     align-items: center;
     justify-content: center;
 }
 canvas:first-of-type{
-    background-color: white;
+	background-color: white;
 }
 canvas{
-    position: absolute;
+	position: absolute;
+}
+#start-menu{
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	align-items: center;
+}
+#dark-theme{
+	padding: 8px;
+	font-weight: bolder;
+	position: absolute;
+	bottom: 0;
+	border-top: 2px dashed black;
+	cursor: pointer;
+}
+#level-choosing{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+#level-choosing > button{
+	width: 40px;
+	height: 40px;
 }

@@ -1,0 +1,27 @@
+{
+  "name": "breakout",
+  "version": "0.0.1",
+  "description": "Enhanced HTML/CSS/JS version of the famous breakout game.",
+  "main": "main.js",
+  "scripts": {
+    "convert-levels": "node ./convert-levels.js",
+    "lvl": "npm run convert-levels"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trustedtomato/breakout.git"
+  },
+  "keywords": [
+    "game",
+    "breakout",
+    "2d",
+    "atari",
+    "classic"
+  ],
+  "author": "Halasi Tamás",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/trustedtomato/breakout/issues"
+  },
+  "homepage": "https://github.com/trustedtomato/breakout#readme"
+}

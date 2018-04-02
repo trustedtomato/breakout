@@ -1,9 +1,18 @@
+if(typeof Array.prototype.flatten !== 'function'){
+	Array.prototype.flatten = function(){
+		return this.reduce((acc, val) => acc.concat(val), []);
+	}
+}
 class BufferMatrix{
-	constructor(width, height, cellSize = 1){
+	constructor(width, height, cellSize, arrayBuffer){
 		this.width = width;
 		this.height = height;
 		this.cellSize = cellSize;
-		this.view = new DataView(new ArrayBuffer(width * height * cellSize));
+		this.view = new DataView(
+			arrayBuffer
+				? arrayBuffer.slice(0, width * height * cellSize)
+				: new ArrayBuffer(width * height * cellSize)
+		);
 	}
 	getOffset(x, y = 0, byte = 0, neededBytes = 1){
 		if(byte + neededBytes > this.cellSize){
@@ -11,12 +20,24 @@ class BufferMatrix{
 		}
 		return (y * this.width + x) * this.cellSize;
 	}
-	forEach(func){
+	some(func){
 		for(let x = 0; x < this.width; x++){
 			for(let y = 0; y < this.height; y++){
-				func(this.getOffset(x,y), x, y);
+				if(func(this.getOffset(x,y), x, y)){
+					return true;
+				}
 			}
 		}
+		return false;
+	}
+	all(func){
+		return !this.some((...args) => !func(...args));
+	}
+	forEach(func){
+		this.some((...args) => {
+			func(...args);
+			return false;
+		});
 	}
 	toString(){
 		let str = '';
@@ -35,29 +56,15 @@ class BufferMatrix{
 
 const lineBreakRegex = /\r?\n/;
 const digitRegex = /\d/;
-const versionRegex = /^v(\d+)$/;
-const parseRawLevel = rawLevel => {
-	const [rawVersion, ...lines] = rawLevel.split(lineBreakRegex);
-	const versionMatch = rawVersion.match(versionRegex);
-	if(!versionMatch){
-		console.error(`Unsupported version string "${rawVersion}"!`);
-		return;
-	}
-	
-	const version = versionMatch[1];
-	if(version === '0'){
-		console.log(`Level parsing using v${version}...`);
-		const matrix = new BufferMatrix(lines[0].length, lines.length, 1);
-		for(let y = 0; y < matrix.height; y++){
-			for(let x = 0; x < matrix.width; x++){
-				const type = parseInt(lines[y][x]);
-				if(Number.isFinite(type)){
-					matrix.view.setUint8(matrix.getOffset(x, y, 0, 1), type + 1);
-				}
-			}
-		}
-		return matrix;
-	}
+const parseLevelBuffer = buffer => {
+	const metadataLength = 2;
+	const metadata = new DataView(buffer.slice(0, metadataLength));
+	const width = metadata.getUint8(0);
+	const height = metadata.getUint8(1);
+	const content = buffer.slice(metadataLength);
+	const matrix = new BufferMatrix(width, height, 1, content);
+	console.log(matrix.toString());
+	return matrix;
 };
 
 const reqAnimFrame = () => new Promise(requestAnimationFrame);
@@ -65,16 +72,27 @@ const sendThrough = func => value => {
 	func(value);
 	return value;
 };
-const listen = (element, ...args) => {
-	element.addEventListener(...args);
-	return{
-		destroy: () => {
-			element.removeEventListener(...args);
-		}
+const listen = (eventtarget, type, func, ...args) => {
+	if(Array.isArray(eventtarget)){
+		return eventtarget.map(et => listen(et, type, func, ...args)).flatten();
 	}
+	if(Array.isArray(type)){
+		return type.map(t => listen(eventtarget, t, func, ...args)).flatten();
+	}
+	eventtarget.addEventListener(type, func, ...args);
+	return[{
+		destroy: () => {
+			eventtarget.removeEventListener(type, func, ...args);
+		}
+	}];
 };
-const waitForEvent = (element, type) => new Promise(resolve => {
-	element.addEventListener(type, resolve, {once: true});
+const waitForEvent = (eventtarget, type, ...args) => new Promise(resolve => {
+	const listeners = listen(eventtarget, type, e => {
+		for(const listener of listeners){
+			listener.destroy();
+		}
+		return resolve(e);
+	}, ...args);
 });
 const between = (value, min, max) => {
 	if(value < min) return min;
@@ -129,5 +147,7 @@ const range = (from, to, step = 1) => {
 	}
 	return arr;
 };
+const getById = id => document.getElementById(id);
+const selectAll = (selector, parent) => [...parent.querySelectorAll(selector)];
 
-export {parseRawLevel, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, doNothing, id, isSameSign, range};
+export {parseLevelBuffer, BufferMatrix, reqAnimFrame, sendThrough, listen, between, Vector, waitForEvent, doNothing, id, isSameSign, range, getById, selectAll};
